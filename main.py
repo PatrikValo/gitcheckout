@@ -1,7 +1,7 @@
 import json
 import sys
 
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from pathlib import Path
 from subprocess import check_output, CalledProcessError, STDOUT
 from typing import List, Tuple
@@ -76,6 +76,68 @@ class Cache:
         return result
 
 
+class CheckoutManager:
+    def __init__(self) -> None:
+        self._cache = Cache()
+
+    def _create_time_based_checkout(self, n: int) -> None:
+        checkouts = self._cache.get_checkouts()
+        if len(checkouts) <= n:
+            return
+        name = checkouts[n]
+        try:
+            check_output(["git", "checkout", name])
+            self._cache.add_checkout(name)
+        except CalledProcessError:
+            sys.exit(1)
+
+    def _create_name_based_checkout(self, name: str) -> None:
+        if name == "-":
+            return self._create_time_based_checkout(1)
+
+        try:
+            check_output(["git", "checkout", name])
+            self._cache.add_checkout(name)
+        except CalledProcessError:
+            sys.exit(1)
+
+    def _create_branch(self, name: str, description: str) -> None:
+        try:
+            check_output(["git", "checkout", "-b", name])
+            self._cache.add_branch(name, description)
+            self._cache.add_checkout(name)
+        except CalledProcessError:
+            sys.exit(1)
+
+    def _print_checkouts(self) -> None:
+        branches = {
+            name: description for name, description in self._cache.get_branches()
+        }
+        checkouts = self._cache.get_checkouts()[0:CHECKOUTS_LIMIT]
+        if not checkouts:
+            return
+        print("+", "---", "+", 30 * "-", "+", 40 * "-", "+")
+        print("| {:^3} | {:<30} | {:<40} |".format("n", "name", "description"))
+        print("+", "---", "+", 30 * "-", "+", 40 * "-", "+")
+        for i, checkout in enumerate(checkouts):
+            print(
+                "| {:^3} | {:<30} | {:<40} |".format(
+                    i, checkout[0:30], branches.get(checkout, "")[0:40]
+                )
+            )
+        print("+", "---", "+", 30 * "-", "+", 40 * "-", "+")
+
+    def run(self, args: Namespace) -> None:
+        if args.branch:
+            self._create_name_based_checkout(args.branch)
+        elif args.b:
+            self._create_branch(args.b[0], args.b[1])
+        elif args.n:
+            self._create_time_based_checkout(args.n)
+        elif args.list:
+            self._print_checkouts()
+
+
 def git_exists() -> bool:
     try:
         check_output(["which", "git"], stderr=STDOUT)
@@ -90,53 +152,6 @@ def git_repo_exists() -> bool:
     except CalledProcessError:
         return False
     return True
-
-
-def create_checkout(name: str) -> None:
-    try:
-        check_output(["git", "checkout", name])
-        Cache().add_checkout(name)
-    except CalledProcessError:
-        sys.exit(1)
-
-
-def create_n_checkout(n: int) -> None:
-    checkouts = Cache().get_checkouts()
-    if len(checkouts) <= n:
-        return
-    name = checkouts[n]
-    try:
-        check_output(["git", "checkout", name])
-        Cache().add_checkout(name)
-    except CalledProcessError:
-        sys.exit(1)
-
-
-def create_branch(name: str, description: str) -> None:
-    try:
-        check_output(["git", "checkout", "-b", name])
-        Cache().add_branch(name, description)
-        Cache().add_checkout(name)
-    except CalledProcessError:
-        sys.exit(1)
-
-
-def print_checkouts() -> None:
-    cache = Cache()
-    branches = {name: description for name, description in cache.get_branches()}
-    checkouts = cache.get_checkouts()[0:CHECKOUTS_LIMIT]
-    if not checkouts:
-        return
-    print("+", "---", "+", 30 * "-", "+", 40 * "-", "+")
-    print("| {:^3} | {:<30} | {:<40} |".format("n", "name", "description"))
-    print("+", "---", "+", 30 * "-", "+", 40 * "-", "+")
-    for i, checkout in enumerate(checkouts):
-        print(
-            "| {:^3} | {:<30} | {:<40} |".format(
-                i, checkout[0:30], branches.get(checkout, "")[0:40]
-            )
-        )
-    print("+", "---", "+", 30 * "-", "+", 40 * "-", "+")
 
 
 def main() -> None:
@@ -157,18 +172,7 @@ def main() -> None:
     group.add_argument("-n", metavar="<number>", type=int, help="checkout to branch")
     group.add_argument("-l", "--list", action="store_true", help="list all checkouts")
     args = parser.parse_args()
-
-    if args.branch:
-        if args.branch == "-":
-            create_n_checkout(1)
-        else:
-            create_checkout(args.branch)
-    elif args.b:
-        create_branch(args.b[0], args.b[1])
-    elif args.n:
-        create_n_checkout(args.n)
-    elif args.list:
-        print_checkouts()
+    CheckoutManager().run(args)
 
 
 if __name__ == "__main__":
