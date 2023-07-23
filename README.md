@@ -63,6 +63,30 @@ $ gitcheckout -n 2
 Switched to branch 'doc'
 ```
 
+**Switch to branch based on the number**
+
+If you don't want to see the checkout in your list you can remove it.
+
+`gitcheckout -d <checkout_number>`
+
+```bash
+$ gitcheckout -l
++ --- + ------------------------------ + ---------------------------------------- +
+|  n  | name                           | description                              |
++ --- + ------------------------------ + ---------------------------------------- +
+|  0  | pvalo_personal_branch          | implement gitcheckout -l command         |
+|  1  | doc2                           | update a README documentation            |
+|  2  | doc                            | create a README documentation            |
++ --- + ------------------------------ + ---------------------------------------- +
+$ gitcheckout -d 1
++ --- + ------------------------------ + ---------------------------------------- +
+|  n  | name                           | description                              |
++ --- + ------------------------------ + ---------------------------------------- +
+|  0  | pvalo_personal_branch          | implement gitcheckout -l command         |
+|  1  | doc                            | create a README documentation            |
++ --- + ------------------------------ + ---------------------------------------- +
+```
+
 ## Installation
 
 **Requirements**
