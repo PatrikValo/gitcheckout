@@ -63,7 +63,7 @@ $ gitcheckout -n 2
 Switched to branch 'doc'
 ```
 
-**Switch to branch based on the number**
+**Delete checkout based on the number**
 
 If you don't want to see the checkout in your list you can remove it.
 
