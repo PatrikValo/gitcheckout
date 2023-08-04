@@ -87,6 +87,31 @@ $ gitcheckout -d 1
 + --- + ------------------------------ + ---------------------------------------- +
 ```
 
+**Change the description of the branch**
+
+If you don't like the description of the branch you can change it later.
+
+`gitcheckout -c <checkout_number> <new_description>`
+
+```bash
+$ gitcheckout -l
++ --- + ------------------------------ + ---------------------------------------- +
+|  n  | name                           | description                              |
++ --- + ------------------------------ + ---------------------------------------- +
+|  0  | pvalo_personal_branch          | implement gitcheckout -l command         |
+|  1  | doc2                           | update a README documentation            |
+|  2  | doc                            | create a README documentation            |
++ --- + ------------------------------ + ---------------------------------------- +
+$ gitcheckout -c 1 "i dont like the description"
++ --- + ------------------------------ + ---------------------------------------- +
+|  n  | name                           | description                              |
++ --- + ------------------------------ + ---------------------------------------- +
+|  0  | pvalo_personal_branch          | implement gitcheckout -l command         |
+|  1  | doc2                           | i dont like the description              |
+|  2  | doc                            | create a README documentation            |
++ --- + ------------------------------ + ---------------------------------------- +
+```
+
 ## Installation
 
 **Requirements**

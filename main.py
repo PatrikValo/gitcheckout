@@ -69,6 +69,15 @@ class Cache:
         branches.insert(0, json.dumps({"name": name, "description": description}))
         self._write_branches(branches)
 
+    def change_description_of_branch(self, name: str, description: str) -> None:
+        branches = [
+            json.dumps({"name": b, "description": d})
+            for b, d in self.get_branches()
+            if b != name
+        ]
+        branches.insert(0, json.dumps({"name": name, "description": description}))
+        self._write_branches(branches)
+
     def get_checkouts(self) -> List[str]:
         return self._read_checkouts()
 
@@ -84,10 +93,13 @@ class CheckoutManager:
     def __init__(self) -> None:
         self._cache = Cache()
 
-    def _create_time_based_checkout(self, n: int) -> None:
+    def _get_checkout(self, n: int) -> str:
         checkouts = self._cache.get_checkouts()
         assert len(checkouts) > n, f"requested {n} checkout doesn't exist"
-        name = checkouts[n]
+        return checkouts[n]
+
+    def _create_time_based_checkout(self, n: int) -> None:
+        name = self._get_checkout(n)
         try:
             check_output(["git", "checkout", name])
             self._cache.add_checkout(name)
@@ -121,6 +133,10 @@ class CheckoutManager:
         except CalledProcessError:
             sys.exit(1)
 
+    def _change_description(self, n: int, description: str) -> None:
+        name = self._get_checkout(n)
+        self._cache.change_description_of_branch(name, description)
+
     def _print_checkouts(self) -> None:
         branches = {
             name: description for name, description in self._cache.get_branches()
@@ -148,6 +164,9 @@ class CheckoutManager:
             self._create_time_based_checkout(args.n)
         elif args.d is not None:
             self._remove_checkout(args.d)
+            self._print_checkouts()
+        elif args.c:
+            self._change_description(int(args.c[0]), args.c[1])
             self._print_checkouts()
         elif args.list:
             self._print_checkouts()
@@ -186,6 +205,12 @@ def main() -> None:
     )
     group.add_argument("-n", metavar="<number>", type=int, help="checkout to branch")
     group.add_argument("-d", metavar="<number>", type=int, help="delete the checkout")
+    group.add_argument(
+        "-c",
+        nargs=2,
+        metavar=("<number>", "<desc>"),
+        help="change the description of the branch",
+    )
     group.add_argument("-l", "--list", action="store_true", help="list all checkouts")
     args = parser.parse_args()
 
